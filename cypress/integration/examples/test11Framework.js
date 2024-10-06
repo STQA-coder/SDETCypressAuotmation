@@ -2,6 +2,7 @@
 
 const dataFile = require('../../fixtures/example.json')
 import HomePage from '../PageObjects/HomePage';
+import shopPage from '../PageObjects/shopPage'
 /**
  * Best Practice to build cypress Framework
  * setting the test hooks
@@ -14,34 +15,67 @@ import HomePage from '../PageObjects/HomePage';
 
 describe("This is my 11th framework suite", ()=>{
   const homePage=  new HomePage()
+  const ShopPage = new shopPage()
+  let Data;
 
-    // before(function(){
-    //     cy.fixture('example').then((data)=>{
+    before(function(){
+        cy.fixture('example').then(function(data){
 
-    //        this.Data =data
+Data=data
 
-    //     });
-    // });
+        });
+    });
 
     it("Framework understanding", ()=>{
 
-        cy.visit('https://rahulshettyacademy.com/angularpractice/');
-        homePage.getUserName().type(dataFile.name);
-        homePage.getgender().select(dataFile.gender)
+        cy.visit(Cypress.env("url")+"/angularpractice/");
+     //   cy.visit('https://rahulshettyacademy.com/angularpractice/');
+        homePage.getUserName().type(Data.name);
+        homePage.getgender().select(Data.gender)
 
         // two way data binding assertion
-        cy.get(':nth-child(4) > .ng-untouched').should('have.value', dataFile.name)
+        homePage.getDataBinding().should('have.value', dataFile.name)
         // min length attr validation
-        cy.get(':nth-child(1) > .form-control').should("have.attr", 'minlength', '2');
+        homePage.getlengthValidation().should("have.attr", 'minlength', '2');
         // enterpreneurship disability validation
-        cy.get('#inlineRadio3').should('be.disabled')
+        homePage.getenterpreneurshipDisability().should('be.disabled')
 
         // click on shop button
-        cy.get(':nth-child(2) > .nav-link').click()
+        homePage.getShopButton().click()
 
         dataFile.productName.forEach(function(element){
             cy.SelectProduct(element);
         })
+
+        ShopPage.getcheckout().click()
+        var sum = 0
+        cy.get('tr td:nth-child(4) strong').each(($el, index, $list)=>{
+            
+            const actualText = $el.text()
+            var result = actualText.split(" ")
+
+            /**
+             * result[0] = ₹.
+             * result[1] = 50000 etc
+             */
+            result = result[1].trim()
+           sum = Number(sum)+Number(result)
+           cy.log(sum)
+        })
+
+        cy.get('h3 > strong').invoke('text')
+        .then((value)=>{
+
+            const totalcount = value.split(" ")
+           const newTotal =  totalcount[1]
+
+           expect(Number(newTotal)).to.equal(sum)
+        })
+        cy.get('[class="btn btn-success"]').click()
+        cy.get('#country').type('India')
+        cy.contains("India").click()
+        cy.get('#checkbox2').check();
+        cy.get('[type="submit"]').click()
         
     });
 });
